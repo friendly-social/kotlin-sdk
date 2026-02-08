@@ -8,7 +8,7 @@ public data class Nickname private constructor(val string: String) {
         public val MaxLength: Int = 256
 
         public fun validate(string: String): Boolean =
-            string.length <= MaxLength
+            string.isNotBlank() && string.length <= MaxLength
 
         public fun orNull(string: String): Nickname? {
             if (validate(string)) return orThrow(string)
@@ -17,6 +17,7 @@ public data class Nickname private constructor(val string: String) {
 
         public fun orThrow(string: String): Nickname {
             require(string.length <= MaxLength)
+            require(string.isNotBlank())
             return Nickname(string)
         }
     }

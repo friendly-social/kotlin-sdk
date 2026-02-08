@@ -12,6 +12,9 @@ public value class NicknameSerializable(public val string: String) {
                 "Nickname length is ${string.length}, but should be less than ${Nickname.MaxLength}",
             )
         }
+        if (string.isBlank()) {
+            throw SerializationException("Nickname cannot be blank")
+        }
     }
 
     public fun typed(): Nickname = Nickname.orThrow(string)
