@@ -24,4 +24,5 @@ suspend fun main() {
     // friendsExample()
     // networkExample()
     // feedExample()
+    // emailExample()
 }

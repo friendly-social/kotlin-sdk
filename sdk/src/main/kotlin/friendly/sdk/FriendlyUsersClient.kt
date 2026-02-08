@@ -148,14 +148,13 @@ public class FriendlyUsersClient(
         }
         val response = when (request) {
             is IOError -> return EditResult.IOError(request.cause)
-            is ServerError -> return EditResult.ServerError
+            is ServerError -> return ServerError
             is Success -> request.response
         }
         when (response.status) {
-            Unauthorized -> return EditResult.Unauthorized
-            OK -> {}
+            Unauthorized -> return Unauthorized
+            OK -> return Success
             else -> error("Unknown status code")
         }
-        return EditResult.Success
     }
 }

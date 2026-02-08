@@ -8,6 +8,7 @@ public data class SocialLink private constructor(val string: String) {
         public val MaxLength: Int = 2048
 
         public fun orThrow(string: String): SocialLink {
+            require(string.isNotBlank())
             require(string.length <= MaxLength)
             return SocialLink(string)
         }

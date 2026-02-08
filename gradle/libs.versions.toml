@@ -4,7 +4,7 @@ kotlin = "2.2.20"
 ktor = "3.3.0"
 ktlint = "13.0.0"
 slf4j = "2.0.17"
-friendly = "0.0.1-dev032"
+friendly = "0.0.1-dev034"
 maven-publish = "0.29.0"
 
 [libraries]
