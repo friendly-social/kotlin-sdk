@@ -145,6 +145,90 @@ public class FriendlyAuthClient(
         }
     }
 
+    @Serializable
+    private data class EmailRequestBody(val email: EmailSerializable)
+
+    public sealed interface EmailResult {
+        public fun orThrow()
+
+        public data class IOError(val cause: Exception) : EmailResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : EmailResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object EmailAlreadyUsed : EmailResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Success : EmailResult {
+            override fun orThrow() {}
+        }
+    }
+
+    public suspend fun email(email: Email): EmailResult {
+        val endpoint = endpoint / "email"
+        val requestBody = EmailRequestBody(email.serializable())
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Post
+            setBody(requestBody)
+        }
+        val response = when (request) {
+            is IOError -> return EmailResult.IOError(request.cause)
+            is ServerError -> return EmailResult.ServerError
+            is Success -> request.response
+        }
+        return when (response.status) {
+            Conflict -> EmailAlreadyUsed
+            OK -> Success
+            else -> error("Unknown status")
+        }
+    }
+
+    @Serializable
+    private class LoginRequestBody(
+        val email: EmailSerializable,
+        val code: LoginCodeSerializable,
+    )
+
+    public sealed interface LoginResult {
+        public fun orThrow()
+
+        public data class IOError(val cause: Exception) : LoginResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : LoginResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object InvalidCode : LoginResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Success : LoginResult {
+            override fun orThrow() {}
+        }
+    }
+
+    public suspend fun login(email: Email, code: LoginCode): LoginResult {
+        val endpoint = endpoint / "login"
+        val requestBody = LoginRequestBody(
+            email = email.serializable(),
+            code = code.serializable(),
+        )
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Post
+            setBody(requestBody)
+        }
+        val response = when (request) {
+            is IOError -> return LoginResult.IOError(request.cause)
+            is ServerError -> return LoginResult.ServerError
+            is Success -> request.response
+        }
+        return when (response.status) {
+            Forbidden -> InvalidCode
+            OK -> Success
+            else -> error("Unknown status")
+        }
+    }
+
     public suspend fun logout(authorization: Authorization): LogoutResult {
         val endpoint = endpoint / "logout"
         val request = httpClient.safeHttpRequest(endpoint.string) {
