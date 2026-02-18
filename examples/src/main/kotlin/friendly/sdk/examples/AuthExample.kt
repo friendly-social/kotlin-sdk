@@ -4,6 +4,7 @@ import friendly.sdk.ConfirmationCode
 import friendly.sdk.Email
 import friendly.sdk.Interest
 import friendly.sdk.InterestList
+import friendly.sdk.LocaleCode
 import friendly.sdk.LoginCode
 import friendly.sdk.Nickname
 import friendly.sdk.UserDescription
@@ -23,13 +24,16 @@ suspend fun authExample() {
     println(authorization)
     println()
     val email = Email.orThrow("friendly-sdk-test${Random.nextInt()}@y9san9.me")
-    val linkSuccess = client.email.link(authorization, email).orThrow()
+    val linkSuccess = client.email.link(
+        authorization = authorization,
+        email = email,
+        localeCode = LocaleCode.En,
+    ).orThrow()
     println("=== Link Success ===")
     println(linkSuccess)
     println()
     print("Enter confirmation code from email: ")
-    // val confirmationCode = ConfirmationCode.orThrow(readln().toInt())
-    val confirmationCode = ConfirmationCode.orThrow(1111_1111)
+    val confirmationCode = ConfirmationCode.orThrow(readln().toInt())
     val confirmSuccess = client.email.confirm(
         authorization = authorization,
         code = confirmationCode,
@@ -37,13 +41,12 @@ suspend fun authExample() {
     println("=== Confirm Success ===")
     println(confirmSuccess)
     println()
-    val emailAuthSuccess = client.auth.email(email).orThrow()
+    val emailAuthSuccess = client.auth.email(email, LocaleCode.En).orThrow()
     println("=== Email Auth Success ===")
     println(emailAuthSuccess)
     println()
     print("Enter auth code from email: ")
-    // val authCode = LoginCode.orThrow(readln().toInt())
-    val authCode = LoginCode.orThrow(1111_1111)
+    val authCode = LoginCode.orThrow(readln().toInt())
     val loginSuccess = client.auth.login(email, authCode).orThrow()
     println("=== Login Success ===")
     println(loginSuccess)

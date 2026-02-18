@@ -157,7 +157,7 @@ public class FriendlyAuthClient(
         public data object ServerError : EmailResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data object EmailAlreadyUsed : EmailResult {
+        public data object UnknownEmail : EmailResult {
             override fun orThrow(): Nothing = error("$this")
         }
         public data object Success : EmailResult {
@@ -165,11 +165,15 @@ public class FriendlyAuthClient(
         }
     }
 
-    public suspend fun email(email: Email): EmailResult {
+    public suspend fun email(
+        email: Email,
+        localeCode: LocaleCode,
+    ): EmailResult {
         val endpoint = endpoint / "email"
         val requestBody = EmailRequestBody(email.serializable())
         val request = httpClient.safeHttpRequest(endpoint.string) {
             method = Post
+            localeCode(localeCode)
             setBody(requestBody)
         }
         val response = when (request) {
@@ -178,7 +182,7 @@ public class FriendlyAuthClient(
             is Success -> request.response
         }
         return when (response.status) {
-            Conflict -> EmailAlreadyUsed
+            Unauthorized -> UnknownEmail
             OK -> Success
             else -> error("Unknown status")
         }

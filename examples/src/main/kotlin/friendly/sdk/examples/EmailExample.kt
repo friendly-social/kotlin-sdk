@@ -4,6 +4,7 @@ import friendly.sdk.ConfirmationCode
 import friendly.sdk.Email
 import friendly.sdk.Interest
 import friendly.sdk.InterestList
+import friendly.sdk.LocaleCode
 import friendly.sdk.Nickname
 import friendly.sdk.UserDescription
 import kotlin.random.Random
@@ -24,6 +25,7 @@ suspend fun emailExample() {
     val linkSuccess = client.email.link(
         authorization = authorization,
         email = Email.orThrow("friendly-sdk-test${Random.nextInt()}@y9san9.me"),
+        localeCode = LocaleCode.En,
     ).orThrow()
     println("=== Link Success ===")
     println(linkSuccess)

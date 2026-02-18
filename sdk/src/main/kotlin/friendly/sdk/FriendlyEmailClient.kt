@@ -33,12 +33,14 @@ public class FriendlyEmailClient(
     public suspend fun link(
         authorization: Authorization,
         email: Email,
+        localeCode: LocaleCode,
     ): LinkResult {
         val endpoint = endpoint / "link"
         val requestBody = LinkRequestBody(email.serializable())
         val request = httpClient.safeHttpRequest(endpoint.string) {
             method = Post
             authorization(authorization)
+            localeCode(localeCode)
             setBody(requestBody)
         }
         val response = when (request) {
