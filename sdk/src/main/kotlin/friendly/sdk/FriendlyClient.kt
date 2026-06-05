@@ -8,6 +8,7 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 
 public class FriendlyClient(
     private val endpoint: FriendlyEndpoint,
@@ -15,7 +16,7 @@ public class FriendlyClient(
 ) {
     private val httpClient = httpClient.config {
         install(ContentNegotiation) {
-            json()
+            json(Json { ignoreUnknownKeys = true })
         }
         defaultRequest {
             contentType(ContentType.Application.Json)
