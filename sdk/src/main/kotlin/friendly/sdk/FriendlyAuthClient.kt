@@ -195,10 +195,14 @@ public class FriendlyAuthClient(
     )
 
     @Serializable
-    private data class LoginResponseBody(val token: TokenSerializable)
+    private data class LoginResponseBody(
+        val token: TokenSerializable,
+        val id: UserIdSerializable,
+        val accessHash: UserAccessHashSerializable,
+    )
 
     public sealed interface LoginResult {
-        public fun orThrow(): Success
+        public fun orThrow(): Authorization
 
         public data class IOError(val cause: Exception) : LoginResult {
             override fun orThrow(): Nothing = error("$this")
@@ -209,8 +213,9 @@ public class FriendlyAuthClient(
         public data object InvalidCode : LoginResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data class Success(val token: Token) : LoginResult {
-            override fun orThrow(): Success = this
+        public data class Success(val authorization: Authorization) :
+            LoginResult {
+            override fun orThrow(): Authorization = this.authorization
         }
     }
 
@@ -234,7 +239,13 @@ public class FriendlyAuthClient(
             OK -> response.body<LoginResponseBody>()
             else -> error("Unknown status")
         }
-        return LoginResult.Success(responseBody.token.typed())
+        return LoginResult.Success(
+            authorization = Authorization(
+                token = responseBody.token.typed(),
+                id = responseBody.id.typed(),
+                accessHash = responseBody.accessHash.typed(),
+            ),
+        )
     }
 
     public suspend fun logout(authorization: Authorization): LogoutResult {
