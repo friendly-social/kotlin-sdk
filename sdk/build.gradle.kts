@@ -26,7 +26,6 @@ kotlin {
         progressiveMode = true
         freeCompilerArgs.add("-Xconsistent-data-class-copy-visibility")
         freeCompilerArgs.add("-Xcontext-sensitive-resolution")
-        freeCompilerArgs.add("-Xdata-flow-based-exhaustiveness")
     }
 }
 
@@ -35,6 +34,7 @@ dependencies {
     api(libs.ktor.client.cio)
     api(libs.ktor.client.content.negotiation)
     api(libs.ktor.client.serialization.json)
+    implementation(libs.kotlinx.serialization.json)
 }
 
 mavenPublishing {
