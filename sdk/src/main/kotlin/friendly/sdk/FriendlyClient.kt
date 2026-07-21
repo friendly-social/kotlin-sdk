@@ -58,6 +58,11 @@ public class FriendlyClient(
         httpClient = this.httpClient,
     )
 
+    public val community: FriendlyCommunityClient = FriendlyCommunityClient(
+        endpoint = endpoint,
+        httpClient = this.httpClient,
+    )
+
     public companion object {
         public fun localhost(
             port: Int = 8080,
