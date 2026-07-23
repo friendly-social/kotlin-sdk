@@ -54,7 +54,7 @@ public class FriendlyCommunityClient(
     }
 
     public sealed interface ListResult {
-        public fun orThrow(): List<CommunityPost>
+        public fun orThrow(): Cursor<CommunityPost>
 
         public data class IOError(val cause: Exception) : ListResult {
             override fun orThrow(): Nothing = error("$this")
@@ -65,13 +65,20 @@ public class FriendlyCommunityClient(
         public data object Unauthorized : ListResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data class Success(val list: List<CommunityPost>) : ListResult {
-            override fun orThrow(): List<CommunityPost> = list
+        public data class Success(val cursor: Cursor<CommunityPost>) :
+            ListResult {
+            override fun orThrow(): Cursor<CommunityPost> = cursor
         }
     }
 
-    public suspend fun list(authorization: Authorization): ListResult {
-        val endpoint = endpoint / "list"
+    public suspend fun list(
+        authorization: Authorization,
+        cursorId: CursorId?,
+    ): ListResult {
+        var endpoint = endpoint / "list"
+        if (cursorId != null) {
+            endpoint = endpoint / cursorId.string
+        }
         val request = httpClient.safeHttpRequest(endpoint.string) {
             method = Get
             authorization(authorization)
@@ -83,10 +90,10 @@ public class FriendlyCommunityClient(
         }
         val responseBody = when (response.status) {
             Unauthorized -> return ListResult.Unauthorized
-            OK -> response.body<List<CommunityPostSerializable>>()
+            OK -> response.body<CursorSerializable<CommunityPostSerializable>>()
             else -> error("Unknown status code")
         }
-        val list = responseBody.map { post -> post.typed() }
-        return ListResult.Success(list)
+        val cursor = responseBody.typed { post -> post.typed() }
+        return ListResult.Success(cursor)
     }
 }
