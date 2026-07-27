@@ -1,6 +1,7 @@
 package friendly.sdk.examples
 
 import friendly.sdk.CommunityPostText
+import friendly.sdk.CursorId
 import friendly.sdk.Interest
 import friendly.sdk.InterestList
 import friendly.sdk.Nickname
@@ -61,8 +62,9 @@ suspend fun communityExample() {
     println()
     val priorPosts = client.community.list(
         authorization = viewerAllowed,
+        cursorId = null,
     ).orThrow()
-    require(priorPosts.isEmpty())
+    require(priorPosts.data.isEmpty())
     println("=== Prior posts ===")
     println(priorPosts)
     println()
@@ -73,18 +75,43 @@ suspend fun communityExample() {
     println("=== Post ===")
     println(post)
     println()
+    val secondPost = client.community.post(
+        authorization = poster,
+        text = CommunityPostText.orThrow("Hello, Paging!"),
+    ).orThrow()
+    println("=== Second Post ===")
+    println(secondPost)
+    println()
     val afterPosts = client.community.list(
         authorization = viewerAllowed,
+        cursorId = null,
     ).orThrow()
-    require(afterPosts.isNotEmpty())
+    require(afterPosts.data.isNotEmpty())
     println("=== After posts ===")
     println(afterPosts)
     println()
     val forbiddenPosts = client.community.list(
         authorization = viewerForbidden,
+        cursorId = null,
     ).orThrow()
-    require(forbiddenPosts.isEmpty())
+    require(forbiddenPosts.data.isEmpty())
     println("=== Forbidden posts ===")
     println(forbiddenPosts)
+    println()
+    val selfPosts = client.community.list(
+        authorization = poster,
+        cursorId = null,
+    ).orThrow()
+    require(selfPosts.data.isNotEmpty())
+    println("=== Self posts ===")
+    println(selfPosts)
+    println()
+    val pagedPosts = client.community.list(
+        authorization = poster,
+        cursorId = CursorId(selfPosts.data.first().id.long.toString()),
+    ).orThrow()
+    require(pagedPosts.data.size == 1)
+    println("=== Paged Posts Check ===")
+    println(pagedPosts)
     println()
 }
