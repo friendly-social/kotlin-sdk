@@ -86,7 +86,7 @@ suspend fun communityExample() {
         authorization = viewerAllowed,
         cursorId = null,
     ).orThrow()
-    require(afterPosts.data.isNotEmpty())
+    require(afterPosts.data.size == 2)
     println("=== After posts ===")
     println(afterPosts)
     println()
@@ -102,7 +102,8 @@ suspend fun communityExample() {
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    require(selfPosts.data.isNotEmpty())
+    require(selfPosts.data.size == 2)
+    require(selfPosts.data.all { post -> post.owner.id == poster.id })
     println("=== Self posts ===")
     println(selfPosts)
     println()
@@ -111,6 +112,7 @@ suspend fun communityExample() {
         cursorId = CursorId(selfPosts.data.first().id.long.toString()),
     ).orThrow()
     require(pagedPosts.data.size == 1)
+    require(pagedPosts.nextId == null)
     println("=== Paged Posts Check ===")
     println(pagedPosts)
     println()
