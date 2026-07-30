@@ -2,6 +2,7 @@ package friendly.sdk.examples
 
 import friendly.sdk.CommunityPostText
 import friendly.sdk.CursorId
+import friendly.sdk.Field
 import friendly.sdk.Interest
 import friendly.sdk.InterestList
 import friendly.sdk.Nickname
@@ -115,5 +116,38 @@ suspend fun communityExample() {
     require(pagedPosts.nextId == null)
     println("=== Paged Posts Check ===")
     println(pagedPosts)
+    println()
+    val delete = client.community.delete(
+        authorization = poster,
+        id = selfPosts.data.first().id,
+    ).orThrow()
+    println("=== Delete ===")
+    println(delete)
+    println()
+    val afterDelete = client.community.list(
+        authorization = poster,
+        cursorId = null,
+    ).orThrow()
+    require(afterDelete.data.first().id == selfPosts.data.last().id)
+    println("=== After Delete ===")
+    println(afterDelete)
+    println()
+    val editText = CommunityPostText.orThrow("edited")
+    val edit = client.community.edit(
+        authorization = poster,
+        id = selfPosts.data.last().id,
+        text = Field(editText),
+    ).orThrow()
+    println("=== Edit ===")
+    println(edit)
+    println()
+    val afterEdit = client.community.list(
+        authorization = poster,
+        cursorId = null,
+    ).orThrow()
+    require(afterEdit.data.first().text == editText)
+    require(afterEdit.data.first().edited)
+    println("=== After Edit ===")
+    println(afterEdit)
     println()
 }
