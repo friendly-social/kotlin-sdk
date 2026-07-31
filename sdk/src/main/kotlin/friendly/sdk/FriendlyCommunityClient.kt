@@ -96,4 +96,98 @@ public class FriendlyCommunityClient(
         val cursor = responseBody.typed { post -> post.typed() }
         return ListResult.Success(cursor)
     }
+
+    @Serializable
+    private data class EditRequestBody(
+        val text: FieldSerializable<CommunityPostTextSerializable>?,
+    )
+
+    public sealed interface EditResult {
+        public fun orThrow()
+
+        public data class IOError(val cause: Exception) : EditResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : EditResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Unauthorized : EditResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object NotFound : EditResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Success : EditResult {
+            override fun orThrow() {}
+        }
+    }
+
+    public suspend fun edit(
+        authorization: Authorization,
+        id: CommunityPostId,
+        text: Field<CommunityPostText>?,
+    ): EditResult {
+        val endpoint = endpoint / id.long.toString() / "edit"
+        val requestBody = EditRequestBody(
+            text = text?.serializable { value -> value.serializable() },
+        )
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Post
+            authorization(authorization)
+            setBody(requestBody)
+        }
+        val response = when (request) {
+            is IOError -> return EditResult.IOError(request.cause)
+            is ServerError -> return EditResult.ServerError
+            is Success -> request.response
+        }
+        return when (response.status) {
+            OK -> EditResult.Success
+            Unauthorized -> EditResult.Unauthorized
+            NotFound -> EditResult.NotFound
+            else -> error("Unknown status code")
+        }
+    }
+
+    public sealed interface DeleteResult {
+        public fun orThrow()
+
+        public data class IOError(val cause: Exception) : DeleteResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : DeleteResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Unauthorized : DeleteResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object NotFound : DeleteResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Success : DeleteResult {
+            override fun orThrow() {}
+        }
+    }
+
+    public suspend fun delete(
+        authorization: Authorization,
+        id: CommunityPostId,
+    ): DeleteResult {
+        val endpoint = endpoint / id.long.toString() / "delete"
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Post
+            authorization(authorization)
+        }
+        val response = when (request) {
+            is IOError -> return DeleteResult.IOError(request.cause)
+            is ServerError -> return DeleteResult.ServerError
+            is Success -> request.response
+        }
+        return when (response.status) {
+            OK -> DeleteResult.Success
+            Unauthorized -> DeleteResult.Unauthorized
+            NotFound -> DeleteResult.NotFound
+            else -> error("Unknown status code")
+        }
+    }
 }

@@ -7,6 +7,7 @@ public data class CommunityPost(
     val text: CommunityPostText,
     val owner: UserDetails,
     val instant: Instant,
+    val edited: Boolean,
 ) {
     public fun serializable(): CommunityPostSerializable =
         CommunityPostSerializable(
@@ -14,5 +15,6 @@ public data class CommunityPost(
             text = text.serializable(),
             owner = owner.serializable(),
             instant = instant,
+            edited = edited,
         )
 }
