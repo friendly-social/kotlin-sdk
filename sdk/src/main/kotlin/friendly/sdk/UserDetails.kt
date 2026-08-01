@@ -10,6 +10,9 @@ public data class UserDetails(
     val socialLink: SocialLink?,
     val email: Email?,
 ) {
+    public val descriptor: UserDescriptor
+        get() = UserDescriptor(id, accessHash)
+
     public fun serializable(): UserDetailsSerializable =
         UserDetailsSerializable(
             id = id.serializable(),
