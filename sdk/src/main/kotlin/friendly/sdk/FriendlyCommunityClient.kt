@@ -12,10 +12,13 @@ public class FriendlyCommunityClient(
     private val endpoint: FriendlyEndpoint = endpoint / "community"
 
     @Serializable
-    private data class PostRequestBody(val text: CommunityPostTextSerializable)
+    private data class PostRequestBody(
+        val text: CommunityPostTextSerializable,
+        val replyTo: CommunityPostDescriptorSerializable?,
+    )
 
     public sealed interface PostResult {
-        public fun orThrow()
+        public fun orThrow(): CommunityPostDescriptor
 
         public data class IOError(val cause: Exception) : PostResult {
             override fun orThrow(): Nothing = error("$this")
@@ -26,16 +29,24 @@ public class FriendlyCommunityClient(
         public data object Unauthorized : PostResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data object Success : PostResult {
-            override fun orThrow() {}
+        public data object NotFound : PostResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data class Success(val descriptor: CommunityPostDescriptor) :
+            PostResult {
+            override fun orThrow(): CommunityPostDescriptor = descriptor
         }
     }
 
     public suspend fun post(
         authorization: Authorization,
         text: CommunityPostText,
+        replyTo: CommunityPostDescriptor? = null,
     ): PostResult {
-        val requestBody = PostRequestBody(text.serializable())
+        val requestBody = PostRequestBody(
+            text = text.serializable(),
+            replyTo = replyTo?.serializable(),
+        )
         val request = httpClient.safeHttpRequest(endpoint.string) {
             method = Post
             authorization(authorization)
@@ -46,11 +57,13 @@ public class FriendlyCommunityClient(
             is ServerError -> return PostResult.ServerError
             is Success -> request.response
         }
-        return when (response.status) {
-            OK -> PostResult.Success
-            Unauthorized -> PostResult.Unauthorized
+        val responseBody = when (response.status) {
+            NotFound -> return PostResult.NotFound
+            Unauthorized -> return PostResult.Unauthorized
+            OK -> response.body<CommunityPostDescriptorSerializable>()
             else -> error("Unknown status code")
         }
+        return PostResult.Success(responseBody.typed())
     }
 
     public sealed interface ListResult {
@@ -95,6 +108,58 @@ public class FriendlyCommunityClient(
         }
         val cursor = responseBody.typed { post -> post.typed() }
         return ListResult.Success(cursor)
+    }
+
+    public sealed interface RepliesResult {
+        public fun orThrow(): Cursor<CommunityPost>
+
+        public data class IOError(val cause: Exception) : RepliesResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : RepliesResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Unauthorized : RepliesResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object NotFound : RepliesResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data class Success(val cursor: Cursor<CommunityPost>) :
+            RepliesResult {
+            override fun orThrow(): Cursor<CommunityPost> = cursor
+        }
+    }
+
+    public suspend fun replies(
+        authorization: Authorization,
+        replyTo: CommunityPostDescriptor,
+        cursorId: CursorId?,
+    ): RepliesResult {
+        var endpoint = endpoint /
+            replyTo.id.long.toString() /
+            replyTo.accessHash.string /
+            "replies"
+        if (cursorId != null) {
+            endpoint = endpoint / cursorId.string
+        }
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Get
+            authorization(authorization)
+        }
+        val response = when (request) {
+            is IOError -> return RepliesResult.IOError(request.cause)
+            is ServerError -> return RepliesResult.ServerError
+            is Success -> request.response
+        }
+        val responseBody = when (response.status) {
+            Unauthorized -> return RepliesResult.Unauthorized
+            NotFound -> return RepliesResult.NotFound
+            OK -> response.body<CursorSerializable<CommunityPostSerializable>>()
+            else -> error("Unknown status code")
+        }
+        val cursor = responseBody.typed { post -> post.typed() }
+        return RepliesResult.Success(cursor)
     }
 
     @Serializable

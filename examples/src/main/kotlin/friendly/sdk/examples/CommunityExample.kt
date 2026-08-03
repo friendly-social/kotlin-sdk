@@ -150,4 +150,21 @@ suspend fun communityExample() {
     println("=== After Edit ===")
     println(afterEdit)
     println()
+    val reply = client.community.post(
+        authorization = viewerAllowed,
+        text = CommunityPostText.orThrow("reply!"),
+        replyTo = afterEdit.data.first().descriptor,
+    ).orThrow()
+    println("=== Reply ===")
+    println(reply)
+    println()
+    val afterReply = client.community.replies(
+        authorization = poster,
+        replyTo = afterEdit.data.first().descriptor,
+        cursorId = null,
+    ).orThrow()
+    require(afterReply.data.first().id == reply.id)
+    println("=== After Reply ===")
+    println(afterReply)
+    println()
 }
