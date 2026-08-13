@@ -1,5 +1,6 @@
 package friendly.sdk.examples
 
+import friendly.sdk.Authorization
 import friendly.sdk.CommunityPostText
 import friendly.sdk.CursorId
 import friendly.sdk.Field
@@ -166,5 +167,30 @@ suspend fun communityExample() {
     require(afterReply.data.first().id == reply.id)
     println("=== After Reply ===")
     println(afterReply)
+    println()
+    communityFromExample(poster, viewerAllowed)
+}
+
+suspend fun communityFromExample(
+    poster: Authorization,
+    viewer: Authorization,
+) {
+    val fromPoster = client.community.from(
+        authorization = poster,
+        userDescriptor = poster.descriptor,
+        cursorId = null,
+    ).orThrow()
+    require(fromPoster.data.size == 1)
+    println("=== From Poster ===")
+    println(fromPoster)
+    println()
+    val fromViewer = client.community.from(
+        authorization = poster,
+        userDescriptor = viewer.descriptor,
+        cursorId = null,
+    ).orThrow()
+    require(fromViewer.data.isEmpty())
+    println("=== From Viewer ===")
+    println(fromViewer)
     println()
 }

@@ -110,6 +110,57 @@ public class FriendlyCommunityClient(
         return ListResult.Success(cursor)
     }
 
+    public sealed interface FromResult {
+        public fun orThrow(): Cursor<CommunityPost>
+
+        public data class IOError(val cause: Exception) : FromResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : FromResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Unauthorized : FromResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object NotFound : FromResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data class Success(val cursor: Cursor<CommunityPost>) :
+            FromResult {
+            override fun orThrow(): Cursor<CommunityPost> = cursor
+        }
+    }
+
+    public suspend fun from(
+        authorization: Authorization,
+        userDescriptor: UserDescriptor,
+        cursorId: CursorId?,
+    ): FromResult {
+        var endpoint = endpoint / "from" /
+            userDescriptor.id.long.toString() /
+            userDescriptor.accessHash.string
+        if (cursorId != null) {
+            endpoint = endpoint / cursorId.string
+        }
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Get
+            authorization(authorization)
+        }
+        val response = when (request) {
+            is IOError -> return FromResult.IOError(request.cause)
+            is ServerError -> return FromResult.ServerError
+            is Success -> request.response
+        }
+        val responseBody = when (response.status) {
+            Unauthorized -> return FromResult.Unauthorized
+            NotFound -> return FromResult.NotFound
+            OK -> response.body<CursorSerializable<CommunityPostSerializable>>()
+            else -> error("Unknown status code")
+        }
+        val cursor = responseBody.typed { post -> post.typed() }
+        return FromResult.Success(cursor)
+    }
+
     public sealed interface RepliesResult {
         public fun orThrow(): Cursor<CommunityPost>
 

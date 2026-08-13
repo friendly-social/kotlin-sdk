@@ -6,7 +6,10 @@ public data class Authorization(
     val id: UserId,
     val accessHash: UserAccessHash,
     val token: Token,
-)
+) {
+    val descriptor: UserDescriptor
+        get() = UserDescriptor(id, accessHash)
+}
 
 internal fun HttpRequestBuilder.authorization(authorization: Authorization) {
     headers["X-User-Id"] = authorization.id.long.toString()
