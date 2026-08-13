@@ -2,7 +2,7 @@ package friendly.sdk
 
 import kotlin.time.Instant
 
-public data class CommunityPost(
+public data class CommunityPostDetails(
     val id: CommunityPostId,
     val accessHash: CommunityPostAccessHash,
     val text: CommunityPostText,
@@ -13,8 +13,8 @@ public data class CommunityPost(
     public val descriptor: CommunityPostDescriptor =
         CommunityPostDescriptor(id, accessHash)
 
-    public fun serializable(): CommunityPostSerializable =
-        CommunityPostSerializable(
+    public fun serializable(): CommunityPostDetailsSerializable =
+        CommunityPostDetailsSerializable(
             id = id.serializable(),
             accessHash = accessHash.serializable(),
             text = text.serializable(),
