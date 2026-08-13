@@ -66,8 +66,67 @@ public class FriendlyCommunityClient(
         return PostResult.Success(responseBody.typed())
     }
 
+    public sealed interface DetailsResult {
+        public fun orThrow(): Success
+
+        public data class IOError(val cause: Exception) : DetailsResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : DetailsResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Unauthorized : DetailsResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data class Success(
+            val post: CommunityPostDetails,
+            val replies: Cursor<CommunityPostDetails>,
+            val upstream: List<CommunityPostDetails>,
+        ) : DetailsResult {
+            override fun orThrow(): Success = this
+        }
+    }
+
+    public suspend fun details(
+        authorization: Authorization,
+        descriptor: CommunityPostDescriptor,
+    ): DetailsResult {
+        val endpoint = endpoint /
+            descriptor.id.long.toString() /
+            descriptor.accessHash.string
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Get
+            authorization(authorization)
+        }
+        val response = when (request) {
+            is IOError -> return DetailsResult.IOError(request.cause)
+            is ServerError -> return DetailsResult.ServerError
+            is Success -> request.response
+        }
+        val responseBody = when (response.status) {
+            Unauthorized -> return DetailsResult.Unauthorized
+            OK -> response.body<DetailsResponseBody>()
+            else -> error("Unknown status code")
+        }
+        return responseBody.typed()
+    }
+
+    @Serializable
+    private data class DetailsResponseBody(
+        val post: CommunityPostDetailsSerializable,
+        val replies: CursorSerializable<CommunityPostDetailsSerializable>,
+        val upstream: List<CommunityPostDetailsSerializable>,
+    )
+
+    private fun DetailsResponseBody.typed(): DetailsResult.Success =
+        DetailsResult.Success(
+            post = post.typed(),
+            replies = replies.typed { post -> post.typed() },
+            upstream = upstream.map { post -> post.typed() },
+        )
+
     public sealed interface ListResult {
-        public fun orThrow(): Cursor<CommunityPost>
+        public fun orThrow(): Cursor<CommunityPostDetails>
 
         public data class IOError(val cause: Exception) : ListResult {
             override fun orThrow(): Nothing = error("$this")
@@ -78,9 +137,9 @@ public class FriendlyCommunityClient(
         public data object Unauthorized : ListResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data class Success(val cursor: Cursor<CommunityPost>) :
+        public data class Success(val cursor: Cursor<CommunityPostDetails>) :
             ListResult {
-            override fun orThrow(): Cursor<CommunityPost> = cursor
+            override fun orThrow(): Cursor<CommunityPostDetails> = cursor
         }
     }
 
@@ -103,7 +162,9 @@ public class FriendlyCommunityClient(
         }
         val responseBody = when (response.status) {
             Unauthorized -> return ListResult.Unauthorized
-            OK -> response.body<CursorSerializable<CommunityPostSerializable>>()
+            OK -> response.body<
+                CursorSerializable<CommunityPostDetailsSerializable>,
+                >()
             else -> error("Unknown status code")
         }
         val cursor = responseBody.typed { post -> post.typed() }
@@ -111,7 +172,7 @@ public class FriendlyCommunityClient(
     }
 
     public sealed interface FromResult {
-        public fun orThrow(): Cursor<CommunityPost>
+        public fun orThrow(): Cursor<CommunityPostDetails>
 
         public data class IOError(val cause: Exception) : FromResult {
             override fun orThrow(): Nothing = error("$this")
@@ -125,9 +186,9 @@ public class FriendlyCommunityClient(
         public data object NotFound : FromResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data class Success(val cursor: Cursor<CommunityPost>) :
+        public data class Success(val cursor: Cursor<CommunityPostDetails>) :
             FromResult {
-            override fun orThrow(): Cursor<CommunityPost> = cursor
+            override fun orThrow(): Cursor<CommunityPostDetails> = cursor
         }
     }
 
@@ -154,7 +215,9 @@ public class FriendlyCommunityClient(
         val responseBody = when (response.status) {
             Unauthorized -> return FromResult.Unauthorized
             NotFound -> return FromResult.NotFound
-            OK -> response.body<CursorSerializable<CommunityPostSerializable>>()
+            OK -> response.body<
+                CursorSerializable<CommunityPostDetailsSerializable>,
+                >()
             else -> error("Unknown status code")
         }
         val cursor = responseBody.typed { post -> post.typed() }
@@ -162,7 +225,7 @@ public class FriendlyCommunityClient(
     }
 
     public sealed interface RepliesResult {
-        public fun orThrow(): Cursor<CommunityPost>
+        public fun orThrow(): Cursor<CommunityPostDetails>
 
         public data class IOError(val cause: Exception) : RepliesResult {
             override fun orThrow(): Nothing = error("$this")
@@ -176,9 +239,9 @@ public class FriendlyCommunityClient(
         public data object NotFound : RepliesResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data class Success(val cursor: Cursor<CommunityPost>) :
+        public data class Success(val cursor: Cursor<CommunityPostDetails>) :
             RepliesResult {
-            override fun orThrow(): Cursor<CommunityPost> = cursor
+            override fun orThrow(): Cursor<CommunityPostDetails> = cursor
         }
     }
 
@@ -206,7 +269,9 @@ public class FriendlyCommunityClient(
         val responseBody = when (response.status) {
             Unauthorized -> return RepliesResult.Unauthorized
             NotFound -> return RepliesResult.NotFound
-            OK -> response.body<CursorSerializable<CommunityPostSerializable>>()
+            OK -> response.body<
+                CursorSerializable<CommunityPostDetailsSerializable>,
+                >()
             else -> error("Unknown status code")
         }
         val cursor = responseBody.typed { post -> post.typed() }

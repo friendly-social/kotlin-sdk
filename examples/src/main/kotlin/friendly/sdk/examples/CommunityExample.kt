@@ -169,6 +169,7 @@ suspend fun communityExample() {
     println(afterReply)
     println()
     communityFromExample(poster, viewerAllowed)
+    communityGetExample(poster)
 }
 
 suspend fun communityFromExample(
@@ -192,5 +193,44 @@ suspend fun communityFromExample(
     require(fromViewer.data.isEmpty())
     println("=== From Viewer ===")
     println(fromViewer)
+    println()
+}
+
+suspend fun communityGetExample(poster: Authorization) {
+    val fromPoster = client.community.from(
+        authorization = poster,
+        userDescriptor = poster.descriptor,
+        cursorId = null,
+    ).orThrow()
+    require(fromPoster.data.size == 1)
+    println("=== From Poster ===")
+    println(fromPoster)
+    println()
+    val replies = client.community.replies(
+        authorization = poster,
+        replyTo = fromPoster.data.first().descriptor,
+        cursorId = null,
+    ).orThrow()
+    require(replies.data.size == 1)
+    println("=== Replies ===")
+    println(replies)
+    println()
+    val getReplies = client.community.details(
+        authorization = poster,
+        descriptor = fromPoster.data.first().descriptor,
+    ).orThrow()
+    require(getReplies.post == fromPoster.data.first())
+    require(getReplies.replies == replies)
+    println("=== Get Replies ===")
+    println(getReplies)
+    println()
+    val getUpstream = client.community.details(
+        authorization = poster,
+        descriptor = replies.data.first().descriptor,
+    ).orThrow()
+    require(getUpstream.upstream.size == 1)
+    require(getUpstream.upstream.first() == fromPoster.data.first())
+    println("=== Get Upstream ===")
+    println(getUpstream)
     println()
 }
