@@ -64,4 +64,66 @@ suspend fun usersExample() {
     println("=== Other User New Details ===")
     println(user2NewDetails)
     println()
+    usersDetails2Example()
+}
+
+suspend fun usersDetails2Example() {
+    val authorization1 = client.auth.generate(
+        nickname = Nickname.orThrow("User 1"),
+        description = UserDescription.orThrow("I want to sleep."),
+        interests = InterestList.orThrow(),
+        avatar = null,
+        socialLink = null,
+    ).orThrow()
+    println("=== Authorization 1 ===")
+    println(authorization1)
+    println()
+    val authorization2 = client.auth.generate(
+        nickname = Nickname.orThrow("User 2"),
+        description = UserDescription.orThrow("Pleeeease."),
+        interests = InterestList.orThrow(),
+        avatar = null,
+        socialLink = null,
+    ).orThrow()
+    println("=== Authorization 2 ===")
+    println(authorization2)
+    println()
+    val authorization3 = client.auth.generate(
+        nickname = Nickname.orThrow("CommonFriend"),
+        description = UserDescription.orThrow("Okay??"),
+        interests = InterestList.orThrow(),
+        avatar = null,
+        socialLink = null,
+    ).orThrow()
+    println("=== Authorization 3 ===")
+    println(authorization3)
+    println()
+    for (first in listOf(authorization1, authorization2, authorization3)) {
+        for (second in listOf(authorization1, authorization2, authorization3)) {
+            if (first == second) continue
+            client.friends.request(
+                authorization = first,
+                userId = second.id,
+                userAccessHash = second.accessHash,
+            ).orThrow()
+        }
+    }
+    val otherDetails = client.users.details2(
+        authorization = authorization1,
+        id = authorization2.id,
+        accessHash = authorization2.accessHash,
+    ).orThrow()
+    require(otherDetails.commonFriends!!.first().id == authorization3.id)
+    println("=== Other Details ===")
+    println(otherDetails)
+    println()
+    val selfDetails = client.users.details2(
+        authorization = authorization1,
+        id = authorization1.id,
+        accessHash = authorization1.accessHash,
+    ).orThrow()
+    require(selfDetails.commonFriends == null)
+    println("=== Self Details ===")
+    println(selfDetails)
+    println()
 }

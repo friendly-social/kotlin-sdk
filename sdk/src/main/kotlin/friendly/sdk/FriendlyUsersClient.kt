@@ -12,6 +12,80 @@ public class FriendlyUsersClient(
 ) {
     private val endpoint = endpoint / "users"
 
+    public sealed interface Details2Result {
+        public fun orThrow(): Success
+
+        public data class IOError(val cause: Exception) : Details2Result {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : Details2Result {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Unauthorized : Details2Result {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data class Success(
+            val details: UserDetails,
+            val commonFriends: List<UserDetails>?,
+        ) : Details2Result {
+            override fun orThrow(): Success = this
+        }
+    }
+
+    public suspend fun details2(authorization: Authorization): Details2Result {
+        val endpoint = endpoint / "details2"
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Get
+            authorization(authorization)
+        }
+        val response = when (request) {
+            is IOError -> return Details2Result.IOError(request.cause)
+            is ServerError -> return Details2Result.ServerError
+            is Success -> request.response
+        }
+        val responseBody = when (response.status) {
+            Unauthorized -> return Details2Result.Unauthorized
+            OK -> response.body<Details2Response>()
+            else -> error("Unknown status code")
+        }
+        return responseBody.typed()
+    }
+
+    public suspend fun details2(
+        authorization: Authorization,
+        id: UserId,
+        accessHash: UserAccessHash,
+    ): Details2Result {
+        val endpoint = endpoint / "details2" / "${id.long}" / accessHash.string
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Get
+            authorization(authorization)
+        }
+        val response = when (request) {
+            is IOError -> return Details2Result.IOError(request.cause)
+            is ServerError -> return Details2Result.ServerError
+            is Success -> request.response
+        }
+        val responseBody = when (response.status) {
+            Unauthorized -> return Details2Result.Unauthorized
+            OK -> response.body<Details2Response>()
+            else -> error("Unknown status code")
+        }
+        return responseBody.typed()
+    }
+
+    @Serializable
+    private data class Details2Response(
+        val details: UserDetailsSerializable,
+        val commonFriends: List<UserDetailsSerializable>?,
+    )
+
+    private fun Details2Response.typed(): Details2Result.Success =
+        Details2Result.Success(
+            details = details.typed(),
+            commonFriends = commonFriends?.map { user -> user.typed() },
+        )
+
     public sealed interface DetailsResult {
         public fun orThrow(): UserDetails
 
