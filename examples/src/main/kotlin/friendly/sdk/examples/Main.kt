@@ -22,7 +22,7 @@ suspend fun main() {
     // filesExample()
     // emailExample()
     // usersExample()
-    friendsExample()
+    // friendsExample()
     // networkExample()
     // feedExample()
     // communityExample()
