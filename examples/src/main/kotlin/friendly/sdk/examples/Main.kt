@@ -20,11 +20,11 @@ val client = FriendlyClient.localhost(httpClient = httpClient)
 suspend fun main() {
     // authExample()
     // filesExample()
+    // emailExample()
     // usersExample()
-    // friendsExample()
+    friendsExample()
     // networkExample()
     // feedExample()
-    // emailExample()
     // communityExample()
     // activityExample()
 }
