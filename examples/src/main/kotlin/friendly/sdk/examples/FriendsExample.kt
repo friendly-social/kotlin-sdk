@@ -1,5 +1,6 @@
 package friendly.sdk.examples
 
+import friendly.sdk.Friendship
 import friendly.sdk.Interest
 import friendly.sdk.InterestList
 import friendly.sdk.Nickname
@@ -105,5 +106,102 @@ suspend fun friendsExample() {
     ).orThrow()
     println("=== Decline Success ===")
     println(declineSuccess)
+    println()
+    testFriendship()
+}
+
+suspend fun testFriendship() {
+    val friend1 = client.auth.generate(
+        nickname = Nickname.orThrow("y9san9"),
+        description = UserDescription.orThrow("Anti-phronology"),
+        interests = InterestList.orThrow(
+            Interest.orThrow("anti-phronology"),
+        ),
+        avatar = null,
+        socialLink = null,
+    ).orThrow()
+    val friend2 = client.auth.generate(
+        nickname = Nickname.orThrow("kotleni"),
+        description = UserDescription.orThrow("Web Dev"),
+        interests = InterestList.orThrow(
+            Interest.orThrow("web"),
+        ),
+        avatar = null,
+        socialLink = null,
+    ).orThrow()
+    val noneDetails = client.users.details2(
+        authorization = friend1,
+        id = friend2.id,
+        accessHash = friend2.accessHash,
+    ).orThrow()
+    require(noneDetails.user.friendship == Friendship.None)
+    println("=== None Details ===")
+    println(noneDetails)
+    println()
+    client.friends.request(
+        authorization = friend1,
+        userId = friend2.id,
+        userAccessHash = friend2.accessHash,
+    ).orThrow()
+    client.friends.request(
+        authorization = friend2,
+        userId = friend1.id,
+        userAccessHash = friend1.accessHash,
+    ).orThrow()
+    val friendDetails = client.users.details2(
+        authorization = friend1,
+        id = friend2.id,
+        accessHash = friend2.accessHash,
+    ).orThrow()
+    require(friendDetails.user.friendship == Friendship.Friends)
+    println("=== Friend Details ===")
+    println(friendDetails)
+    println()
+    client.friends.decline(
+        authorization = friend1,
+        userId = friend2.id,
+        userAccessHash = friend2.accessHash,
+    ).orThrow()
+    val incomingDetails = client.users.details2(
+        authorization = friend1,
+        id = friend2.id,
+        accessHash = friend2.accessHash,
+    ).orThrow()
+    require(incomingDetails.user.friendship == Friendship.IncomingRequest)
+    println("=== Incoming Details ===")
+    println(incomingDetails)
+    println()
+    client.friends.decline(
+        authorization = friend2,
+        userId = friend1.id,
+        userAccessHash = friend1.accessHash,
+    ).orThrow()
+    client.friends.request(
+        authorization = friend1,
+        userId = friend2.id,
+        userAccessHash = friend2.accessHash,
+    ).orThrow()
+    val outgoingDetails = client.users.details2(
+        authorization = friend1,
+        id = friend2.id,
+        accessHash = friend2.accessHash,
+    ).orThrow()
+    require(outgoingDetails.user.friendship == Friendship.OutgoingRequest)
+    println("=== Outgoing Details ===")
+    println(outgoingDetails)
+    println()
+    client.friends.decline(
+        authorization = friend1,
+        userId = friend2.id,
+        userAccessHash = friend2.accessHash,
+    ).orThrow()
+    val blockDetails = client.users.details2(
+        authorization = friend1,
+        id = friend2.id,
+        accessHash = friend2.accessHash,
+    ).orThrow()
+    require(blockDetails.user.friendship == Friendship.Block)
+    println("=== Block Details ===")
+    println(blockDetails)
     println()
 }

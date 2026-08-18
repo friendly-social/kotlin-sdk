@@ -9,6 +9,7 @@ public data class UserDetails(
     val avatar: FileDescriptor?,
     val socialLink: SocialLink?,
     val email: Email?,
+    val friendship: Friendship,
 ) {
     public val descriptor: UserDescriptor
         get() = UserDescriptor(id, accessHash)
@@ -23,5 +24,6 @@ public data class UserDetails(
             avatar = avatar?.serializable(),
             socialLink = socialLink?.serializable(),
             email = email?.serializable(),
+            friendship = friendship.serializable(),
         )
 }

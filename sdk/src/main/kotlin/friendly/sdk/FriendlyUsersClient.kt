@@ -25,7 +25,7 @@ public class FriendlyUsersClient(
             override fun orThrow(): Nothing = error("$this")
         }
         public data class Success(
-            val details: UserDetails,
+            val user: UserDetails,
             val commonFriends: List<UserDetails>?,
         ) : Details2Result {
             override fun orThrow(): Success = this
@@ -76,13 +76,13 @@ public class FriendlyUsersClient(
 
     @Serializable
     private data class Details2Response(
-        val details: UserDetailsSerializable,
+        val user: UserDetailsSerializable,
         val commonFriends: List<UserDetailsSerializable>?,
     )
 
     private fun Details2Response.typed(): Details2Result.Success =
         Details2Result.Success(
-            details = details.typed(),
+            user = user.typed(),
             commonFriends = commonFriends?.map { user -> user.typed() },
         )
 
