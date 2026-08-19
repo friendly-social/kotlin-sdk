@@ -200,7 +200,7 @@ suspend fun testFriendship() {
         id = friend2.id,
         accessHash = friend2.accessHash,
     ).orThrow()
-    require(blockDetails.user.friendship == Friendship.Block)
+    require(blockDetails.user.friendship == Friendship.OutgoingDecline)
     println("=== Block Details ===")
     println(blockDetails)
     println()
