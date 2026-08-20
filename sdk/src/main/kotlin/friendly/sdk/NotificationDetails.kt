@@ -11,4 +11,12 @@ public sealed interface NotificationDetails {
                 isMutual = isMutual,
             )
     }
+
+    public data class NewReply(val post: CommunityPostDetails) :
+        NotificationDetails {
+        override fun serializable(): NotificationDetailsSerializable =
+            NotificationDetailsSerializable.NewReply(
+                post = post.serializable(),
+            )
+    }
 }

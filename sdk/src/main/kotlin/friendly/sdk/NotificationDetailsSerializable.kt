@@ -19,4 +19,14 @@ public sealed interface NotificationDetailsSerializable {
                 isMutual = isMutual,
             )
     }
+
+    @Serializable
+    @SerialName("new_reply")
+    public data class NewReply(val post: CommunityPostDetailsSerializable) :
+        NotificationDetailsSerializable {
+        override fun typed(): NotificationDetails =
+            NotificationDetails.NewReply(
+                post = post.typed(),
+            )
+    }
 }

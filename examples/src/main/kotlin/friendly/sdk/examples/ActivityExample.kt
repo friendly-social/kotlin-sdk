@@ -94,4 +94,19 @@ suspend fun activityReplyExample() {
     println("=== Activity ===")
     println(activity)
     println()
+    val delete = client.community.delete(
+        authorization = replier,
+        id = reply.id,
+    ).orThrow()
+    println("=== Delete ===")
+    println(delete)
+    println()
+    val emptyActivity = client.activity.list(
+        authorization = poster,
+        cursorId = null,
+    ).orThrow()
+    require(emptyActivity.data.isEmpty())
+    println("=== Empty Activity ===")
+    println(emptyActivity)
+    println()
 }

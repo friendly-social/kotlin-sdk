@@ -11,7 +11,7 @@ public sealed interface ActivityDetails {
     public data class Reply(
         override val id: ActivityId,
         override val instant: Instant,
-        val post: CommunityPostDetails,
+        val post: CommunityPostDetails.Plain,
     ) : ActivityDetails {
         override fun serializable(): ActivityDetailsSerializable =
             ActivityDetailsSerializable.Reply(
