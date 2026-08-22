@@ -126,7 +126,7 @@ public class FriendlyCommunityClient(
         )
 
     public sealed interface ListResult {
-        public fun orThrow(): Cursor<CommunityPostDetails>
+        public fun orThrow(): Cursor<CommunityPostDetails.Plain>
 
         public data class IOError(val cause: Exception) : ListResult {
             override fun orThrow(): Nothing = error("$this")
@@ -137,9 +137,10 @@ public class FriendlyCommunityClient(
         public data object Unauthorized : ListResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data class Success(val cursor: Cursor<CommunityPostDetails>) :
-            ListResult {
-            override fun orThrow(): Cursor<CommunityPostDetails> = cursor
+        public data class Success(
+            val cursor: Cursor<CommunityPostDetails.Plain>,
+        ) : ListResult {
+            override fun orThrow(): Cursor<CommunityPostDetails.Plain> = cursor
         }
     }
 
@@ -163,7 +164,7 @@ public class FriendlyCommunityClient(
         val responseBody = when (response.status) {
             Unauthorized -> return ListResult.Unauthorized
             OK -> response.body<
-                CursorSerializable<CommunityPostDetailsSerializable>,
+                CursorSerializable<CommunityPostDetailsSerializable.Plain>,
                 >()
             else -> error("Unknown status code")
         }
