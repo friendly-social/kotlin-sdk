@@ -168,6 +168,17 @@ suspend fun communityExample() {
     println("=== After Reply ===")
     println(afterReply)
     println()
+    val replyPreviews = client.community.list(
+        authorization = poster,
+        cursorId = null,
+    ).orThrow()
+    require(replyPreviews.data.first().replyPreviews.size == 1)
+    require(
+        replyPreviews.data.first().replyPreviews.first().id == viewerAllowed.id,
+    )
+    println("=== Reply Previews ===")
+    println(replyPreviews)
+    println()
     communityFromExample(poster, viewerAllowed)
     communityGetExample(poster)
 }
