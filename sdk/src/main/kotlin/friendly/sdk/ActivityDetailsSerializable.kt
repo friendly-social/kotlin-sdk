@@ -8,6 +8,7 @@ import kotlin.time.Instant
 public sealed interface ActivityDetailsSerializable {
     public val id: ActivityIdSerializable
     public val instant: Instant
+    public val isRead: Boolean
 
     public fun typed(): ActivityDetails
 
@@ -16,11 +17,13 @@ public sealed interface ActivityDetailsSerializable {
     public data class Reply(
         override val id: ActivityIdSerializable,
         override val instant: Instant,
+        override val isRead: Boolean,
         val post: CommunityPostDetailsSerializable.Plain,
     ) : ActivityDetailsSerializable {
         override fun typed(): ActivityDetails = ActivityDetails.Reply(
             id = id.typed(),
             instant = instant,
+            isRead = isRead,
             post = post.typed(),
         )
     }

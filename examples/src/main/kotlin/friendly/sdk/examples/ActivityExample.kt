@@ -91,8 +91,25 @@ suspend fun activityReplyExample() {
     require(activity.data.size == 1)
     require(first is ActivityDetails.Reply)
     require(first.post.descriptor == reply)
+    require(!first.isRead)
     println("=== Activity ===")
     println(activity)
+    println()
+    val read = client.activity.read(
+        authorization = poster,
+        id = first.id,
+    ).orThrow()
+    println("=== Read ===")
+    println(read)
+    println()
+    val readActivity = client.activity.list(
+        authorization = poster,
+        cursorId = null,
+    ).orThrow()
+    val readFirst = readActivity.data.first()
+    require(readFirst.isRead)
+    println("=== Read Activity ===")
+    println(readActivity)
     println()
     val delete = client.community.delete(
         authorization = replier,
