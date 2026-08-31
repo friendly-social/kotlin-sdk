@@ -5,7 +5,7 @@ ktor = "3.3.0"
 kotlinx-serialization = "1.11.0"
 ktlint = "13.0.0"
 slf4j = "2.0.17"
-friendly = "2026.3.12"
+friendly = "2026.3.13"
 maven-publish = "0.29.0"
 
 [libraries]
