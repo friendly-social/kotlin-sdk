@@ -1,6 +1,7 @@
 package friendly.sdk.examples
 
 import friendly.sdk.Authorization
+import friendly.sdk.CommunityPostReply
 import friendly.sdk.CommunityPostText
 import friendly.sdk.CursorId
 import friendly.sdk.Field
@@ -181,6 +182,24 @@ suspend fun communityExample() {
     println()
     communityFromExample(poster, viewerAllowed)
     communityGetExample(poster)
+    val thread = client.community.post(
+        authorization = viewerAllowed,
+        text = CommunityPostText.orThrow("thread!"),
+        replyTo = afterReply.data.first().descriptor,
+    ).orThrow()
+    println("=== Thread ===")
+    println(thread)
+    println()
+    val afterThread = client.community.details2(
+        authorization = viewerAllowed,
+        descriptor = afterEdit.data.first().descriptor,
+    ).orThrow()
+    val threadReply = afterThread.replies.data.first()
+    require(threadReply is CommunityPostReply.Thread)
+    require(threadReply.thread.size == 2)
+    println("=== After thread ===")
+    println(afterThread.replies)
+    println()
 }
 
 suspend fun communityFromExample(

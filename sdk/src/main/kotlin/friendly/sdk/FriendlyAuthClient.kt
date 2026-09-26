@@ -16,7 +16,7 @@ public class FriendlyAuthClient(
         val nickname: NicknameSerializable,
         val description: UserDescriptionSerializable,
         val interests: InterestListSerializable,
-        val avatar: FileDescriptorSerializable?,
+        val avatar: FilePreuploadDescriptorSerializable?,
         val socialLink: SocialLinkSerializable?,
     )
 
@@ -46,7 +46,7 @@ public class FriendlyAuthClient(
         nickname: Nickname,
         description: UserDescription,
         interests: InterestList,
-        avatar: FileDescriptor?,
+        avatar: FilePreuploadDescriptor?,
         socialLink: SocialLink?,
     ): GenerateResult {
         val endpoint = endpoint / "generate"
