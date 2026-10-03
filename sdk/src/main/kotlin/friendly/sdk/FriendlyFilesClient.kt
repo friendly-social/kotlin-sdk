@@ -7,10 +7,10 @@ import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.append
 import io.ktor.client.request.forms.formData
+import io.ktor.client.request.header
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import kotlinx.io.Sink
-import kotlinx.serialization.Serializable
 
 public class FriendlyFilesClient(
     endpoint: FriendlyEndpoint,
@@ -24,11 +24,60 @@ public class FriendlyFilesClient(
             "${descriptor.id.long}" /
             descriptor.accessHash.string
 
-    @Serializable
-    private data class UploadFileResponseBody(
-        val id: FileIdSerializable,
-        val accessHash: FileAccessHashSerializable,
-    )
+    public sealed interface PreuploadFileResult {
+        public fun orThrow(): FilePreuploadDescriptor
+
+        public data class IOError(val cause: Exception) : PreuploadFileResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : PreuploadFileResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data class Success(val descriptor: FilePreuploadDescriptor) :
+            PreuploadFileResult {
+            override fun orThrow(): FilePreuploadDescriptor = descriptor
+        }
+    }
+
+    public suspend fun preupload(
+        filename: String,
+        size: Long,
+        contentType: ContentType? = null,
+        onUpload: ProgressListener? = null,
+        bodyBuilder: Sink.() -> Unit,
+    ): PreuploadFileResult {
+        val endpoint = endpoint / "preupload"
+        val requestBody = MultiPartFormDataContent(
+            formData {
+                append(
+                    key = "file",
+                    filename = filename,
+                    contentType = contentType,
+                    size = size,
+                    bodyBuilder = bodyBuilder,
+                )
+            },
+        )
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Post
+            setBody(requestBody)
+            header("X-File-Size", size)
+            if (onUpload != null) {
+                onUpload(onUpload)
+            }
+        }
+        val response = when (request) {
+            is IOError -> return PreuploadFileResult.IOError(request.cause)
+            is ServerError -> return PreuploadFileResult.ServerError
+            is Success -> request.response
+        }
+        val responseBody = when (response.status) {
+            OK -> response.body<FilePreuploadDescriptorSerializable>()
+            else -> error("Unknown status code")
+        }
+        val descriptor = responseBody.typed()
+        return PreuploadFileResult.Success(descriptor)
+    }
 
     public sealed interface UploadFileResult {
         public fun orThrow(): FileDescriptor
@@ -46,9 +95,10 @@ public class FriendlyFilesClient(
     }
 
     public suspend fun upload(
+        authorization: Authorization,
         filename: String,
+        size: Long,
         contentType: ContentType? = null,
-        size: Long? = null,
         onUpload: ProgressListener? = null,
         bodyBuilder: Sink.() -> Unit,
     ): UploadFileResult {
@@ -66,6 +116,8 @@ public class FriendlyFilesClient(
         )
         val request = httpClient.safeHttpRequest(endpoint.string) {
             method = Post
+            authorization(authorization)
+            header("X-File-Size", size)
             setBody(requestBody)
             if (onUpload != null) {
                 onUpload(onUpload)
@@ -77,13 +129,10 @@ public class FriendlyFilesClient(
             is Success -> request.response
         }
         val responseBody = when (response.status) {
-            OK -> response.body<UploadFileResponseBody>()
+            OK -> response.body<FileDescriptorSerializable>()
             else -> error("Unknown status code")
         }
         val descriptor = responseBody.typed()
         return UploadFileResult.Success(descriptor)
     }
-
-    private fun UploadFileResponseBody.typed() =
-        FileDescriptor(id.typed(), accessHash.typed())
 }
