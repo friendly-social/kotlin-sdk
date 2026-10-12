@@ -39,7 +39,7 @@ suspend fun filesExample() {
     ).orThrow()
 
     val details = client.users.details2(authorization).orThrow()
-    require(details.user.avatar?.accessHash == avatar.accessHash)
+    require(details.user.avatar?.accessHash?.string == avatar.accessHash.string)
 
     val fileDescriptor = client.files.upload(
         authorization = authorization,

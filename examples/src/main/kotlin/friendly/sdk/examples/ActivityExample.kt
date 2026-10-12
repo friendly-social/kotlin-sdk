@@ -71,7 +71,7 @@ suspend fun activityReplyExample() {
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    require(noActivity.data.isEmpty())
+    require(noActivity.cursor.data.isEmpty())
     println("=== No Activity ===")
     println(noActivity)
     println()
@@ -87,11 +87,12 @@ suspend fun activityReplyExample() {
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    val first = activity.data.first()
-    require(activity.data.size == 1)
+    val first = activity.cursor.data.first()
+    require(activity.cursor.data.size == 1)
     require(first is ActivityDetails.Reply)
     require(first.post.descriptor == reply)
     require(!first.isRead)
+    require(activity.hasUnread)
     println("=== Activity ===")
     println(activity)
     println()
@@ -106,7 +107,8 @@ suspend fun activityReplyExample() {
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    val readFirst = readActivity.data.first()
+    val readFirst = readActivity.cursor.data.first()
+    require(!readActivity.hasUnread)
     require(readFirst.isRead)
     println("=== Read Activity ===")
     println(readActivity)
@@ -122,7 +124,7 @@ suspend fun activityReplyExample() {
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    require(emptyActivity.data.isEmpty())
+    require(emptyActivity.cursor.data.isEmpty())
     println("=== Empty Activity ===")
     println(emptyActivity)
     println()

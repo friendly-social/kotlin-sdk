@@ -2,6 +2,7 @@ package friendly.sdk
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import kotlinx.serialization.Serializable
 
 public class FriendlyActivityClient(
     endpoint: FriendlyEndpoint,
@@ -10,7 +11,7 @@ public class FriendlyActivityClient(
     private val endpoint: FriendlyEndpoint = endpoint / "activity"
 
     public sealed interface ListResult {
-        public fun orThrow(): Cursor<ActivityDetails>
+        public fun orThrow(): Success
 
         public data class IOError(val cause: Exception) : ListResult {
             override fun orThrow(): Nothing = error("$this")
@@ -21,9 +22,11 @@ public class FriendlyActivityClient(
         public data object Unauthorized : ListResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data class Success(val cursor: Cursor<ActivityDetails>) :
-            ListResult {
-            override fun orThrow(): Cursor<ActivityDetails> = cursor
+        public data class Success(
+            val hasUnread: Boolean,
+            val cursor: Cursor<ActivityDetails>,
+        ) : ListResult {
+            override fun orThrow(): Success = this
         }
     }
 
@@ -37,6 +40,7 @@ public class FriendlyActivityClient(
         }
         val request = httpClient.safeHttpRequest(endpoint.string) {
             method = Get
+            compatible()
             authorization(authorization)
         }
         val response = when (request) {
@@ -46,14 +50,22 @@ public class FriendlyActivityClient(
         }
         val responseBody = when (response.status) {
             Unauthorized -> return ListResult.Unauthorized
-            OK -> response.body<
-                CursorSerializable<ActivityDetailsSerializable>,
-                >()
+            OK -> response.body<ListResponse>()
             else -> error("Unknown status code")
         }
-        val cursor = responseBody.typed { post -> post.typed() }
-        return ListResult.Success(cursor)
+        return responseBody.typed()
     }
+
+    @Serializable
+    private data class ListResponse(
+        val hasUnread: Boolean,
+        val cursor: CursorSerializable<ActivityDetailsSerializable>,
+    )
+
+    private fun ListResponse.typed(): ListResult.Success = ListResult.Success(
+        hasUnread = hasUnread,
+        cursor = cursor.typed { details -> details.typed() },
+    )
 
     public sealed interface ReadResult {
         public fun orThrow()
