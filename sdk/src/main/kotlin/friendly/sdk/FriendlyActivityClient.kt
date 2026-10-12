@@ -39,7 +39,6 @@ public class FriendlyActivityClient(
         }
         val request = httpClient.safeHttpRequest(endpoint.string) {
             method = Get
-            compatible()
             authorization(authorization)
         }
         val response = when (request) {
@@ -86,7 +85,7 @@ public class FriendlyActivityClient(
     ): NewUnreadsResult {
         val endpoint = endpoint / "unreads" / "new"
         val request = httpClient.safeHttpRequest(endpoint.string) {
-            method = Post
+            method = Get
             authorization(authorization)
         }
         val response = when (request) {
