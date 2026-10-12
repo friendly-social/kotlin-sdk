@@ -2,6 +2,7 @@ package friendly.sdk.examples
 
 import friendly.sdk.ActivityDetails
 import friendly.sdk.CommunityPostText
+import friendly.sdk.FriendlyActivityClient
 import friendly.sdk.Interest
 import friendly.sdk.InterestList
 import friendly.sdk.Nickname
@@ -71,7 +72,7 @@ suspend fun activityReplyExample() {
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    require(noActivity.cursor.data.isEmpty())
+    require(noActivity.data.isEmpty())
     println("=== No Activity ===")
     println(noActivity)
     println()
@@ -87,14 +88,18 @@ suspend fun activityReplyExample() {
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    val first = activity.cursor.data.first()
-    require(activity.cursor.data.size == 1)
+    val first = activity.data.first()
+    require(activity.data.size == 1)
     require(first is ActivityDetails.Reply)
     require(first.post.descriptor == reply)
     require(!first.isRead)
-    require(activity.hasUnread)
     println("=== Activity ===")
     println(activity)
+    println()
+    val newUnreads = client.activity.newUnreads(poster).orThrow()
+    require(newUnreads is FriendlyActivityClient.NewUnreadsResult.Some)
+    println("=== New Unreads ===")
+    println(newUnreads)
     println()
     val read = client.activity.read(
         authorization = poster,
@@ -107,11 +112,15 @@ suspend fun activityReplyExample() {
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    val readFirst = readActivity.cursor.data.first()
-    require(!readActivity.hasUnread)
+    val readFirst = readActivity.data.first()
     require(readFirst.isRead)
     println("=== Read Activity ===")
     println(readActivity)
+    println()
+    val noUnreads = client.activity.newUnreads(poster).orThrow()
+    require(noUnreads is FriendlyActivityClient.NewUnreadsResult.None)
+    println("=== New Unreads ===")
+    println(noUnreads)
     println()
     val delete = client.community.delete(
         authorization = replier,
@@ -124,7 +133,7 @@ suspend fun activityReplyExample() {
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    require(emptyActivity.cursor.data.isEmpty())
+    require(emptyActivity.data.isEmpty())
     println("=== Empty Activity ===")
     println(emptyActivity)
     println()
