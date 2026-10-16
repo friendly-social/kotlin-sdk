@@ -20,6 +20,7 @@ public class FriendlyClient(
         }
         defaultRequest {
             contentType(ContentType.Application.Json)
+            compatible()
         }
     }
 

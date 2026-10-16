@@ -485,4 +485,49 @@ public class FriendlyCommunityClient(
             else -> error("Unknown status code")
         }
     }
+
+    public sealed interface ReadResult {
+        public fun orThrow()
+
+        public data class IOError(val cause: Exception) : ReadResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : ReadResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Unauthorized : ReadResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object NotFound : ReadResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Success : ReadResult {
+            override fun orThrow() {}
+        }
+    }
+
+    public suspend fun read(
+        authorization: Authorization,
+        descriptor: CommunityPostDescriptor,
+    ): ReadResult {
+        val endpoint = endpoint /
+            descriptor.id.long.toString() /
+            descriptor.accessHash.string /
+            "read"
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Post
+            authorization(authorization)
+        }
+        val response = when (request) {
+            is IOError -> return ReadResult.IOError(request.cause)
+            is ServerError -> return ReadResult.ServerError
+            is Success -> request.response
+        }
+        return when (response.status) {
+            OK -> ReadResult.Success
+            Unauthorized -> ReadResult.Unauthorized
+            NotFound -> ReadResult.NotFound
+            else -> error("Unknown status code")
+        }
+    }
 }

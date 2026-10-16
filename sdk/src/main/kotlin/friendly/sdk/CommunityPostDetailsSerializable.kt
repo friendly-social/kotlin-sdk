@@ -10,6 +10,7 @@ public sealed interface CommunityPostDetailsSerializable {
     public val accessHash: CommunityPostAccessHashSerializable
     public val instant: Instant
     public val replyPreviews: List<UserDetailsSerializable>
+    public val newUnreadId: CommunityPostIdSerializable?
 
     public fun typed(): CommunityPostDetails
 
@@ -20,6 +21,7 @@ public sealed interface CommunityPostDetailsSerializable {
         override val accessHash: CommunityPostAccessHashSerializable,
         override val instant: Instant,
         override val replyPreviews: List<UserDetailsSerializable>,
+        override val newUnreadId: CommunityPostIdSerializable?,
         val text: CommunityPostTextSerializable,
         val owner: UserDetailsSerializable,
         val edited: Boolean,
@@ -32,6 +34,7 @@ public sealed interface CommunityPostDetailsSerializable {
                 replyPreviews = replyPreviews.map { preview ->
                     preview.typed()
                 },
+                newUnreadId = newUnreadId?.typed(),
                 text = text.typed(),
                 owner = owner.typed(),
                 edited = edited,
@@ -45,6 +48,7 @@ public sealed interface CommunityPostDetailsSerializable {
         override val accessHash: CommunityPostAccessHashSerializable,
         override val instant: Instant,
         override val replyPreviews: List<UserDetailsSerializable>,
+        override val newUnreadId: CommunityPostIdSerializable?,
     ) : CommunityPostDetailsSerializable {
         override fun typed(): CommunityPostDetails.Deleted =
             CommunityPostDetails.Deleted(
@@ -54,6 +58,7 @@ public sealed interface CommunityPostDetailsSerializable {
                 replyPreviews = replyPreviews.map { preview ->
                     preview.typed()
                 },
+                newUnreadId = newUnreadId?.typed(),
             )
     }
 }

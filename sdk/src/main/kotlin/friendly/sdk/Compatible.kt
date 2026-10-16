@@ -1,6 +1,6 @@
 package friendly.sdk
 
-import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.plugins.DefaultRequest.DefaultRequestBuilder
 
 @JvmInline
 public value class Compatible(public val int: Int) {
@@ -9,6 +9,6 @@ public value class Compatible(public val int: Int) {
     }
 }
 
-internal fun HttpRequestBuilder.compatible() {
+internal fun DefaultRequestBuilder.compatible() {
     headers["X-Compatible"] = Compatible.Latest.int.toString()
 }
