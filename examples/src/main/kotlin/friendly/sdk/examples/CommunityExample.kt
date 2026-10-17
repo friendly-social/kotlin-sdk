@@ -160,32 +160,48 @@ suspend fun communityExample() {
     println("=== Reply ===")
     println(reply)
     println()
-    val afterReply = client.community.replies(
+    val getReply = client.community.replies(
         authorization = poster,
         replyTo = afterEdit.data.first().descriptor,
         cursorId = null,
     ).orThrow()
-    require(afterReply.data.first().id == reply.id)
-    println("=== After Reply ===")
-    println(afterReply)
+    require(getReply.data.first().id == reply.id)
+    println("=== Get Reply ===")
+    println(getReply)
     println()
-    val replyPreviews = client.community.list(
+    val afterReply = client.community.list(
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    require(replyPreviews.data.first().replyPreviews.size == 1)
+    require(afterReply.data.first().replyPreviews.size == 1)
     require(
-        replyPreviews.data.first().replyPreviews.first().id == viewerAllowed.id,
+        afterReply.data.first().replyPreviews.first().id == viewerAllowed.id,
     )
-    println("=== Reply Previews ===")
-    println(replyPreviews)
+    require(afterReply.data.first().newUnreadId == reply.id)
+    println("=== After Reply ===")
+    println(afterReply)
+    println()
+    val view = client.community.read(
+        authorization = poster,
+        descriptor = afterReply.data.first().descriptor,
+    ).orThrow()
+    println("=== View ===")
+    println(view)
+    println()
+    val afterView = client.community.list(
+        authorization = poster,
+        cursorId = null,
+    ).orThrow()
+    require(afterView.data.first().newUnreadId == null)
+    println("=== After View ===")
+    println(afterView)
     println()
     communityFromExample(poster, viewerAllowed)
     communityGetExample(poster)
     val thread = client.community.post(
         authorization = viewerAllowed,
         text = CommunityPostText.orThrow("thread!"),
-        replyTo = afterReply.data.first().descriptor,
+        replyTo = getReply.data.first().descriptor,
     ).orThrow()
     println("=== Thread ===")
     println(thread)

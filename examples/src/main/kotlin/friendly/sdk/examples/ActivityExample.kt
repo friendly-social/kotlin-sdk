@@ -2,6 +2,7 @@ package friendly.sdk.examples
 
 import friendly.sdk.ActivityDetails
 import friendly.sdk.CommunityPostText
+import friendly.sdk.FriendlyActivityClient
 import friendly.sdk.Interest
 import friendly.sdk.InterestList
 import friendly.sdk.Nickname
@@ -95,6 +96,11 @@ suspend fun activityReplyExample() {
     println("=== Activity ===")
     println(activity)
     println()
+    val newUnreads = client.activity.newUnreads(poster).orThrow()
+    require(newUnreads is FriendlyActivityClient.NewUnreadsResult.Some)
+    println("=== New Unreads ===")
+    println(newUnreads)
+    println()
     val read = client.activity.read(
         authorization = poster,
         id = first.id,
@@ -110,6 +116,11 @@ suspend fun activityReplyExample() {
     require(readFirst.isRead)
     println("=== Read Activity ===")
     println(readActivity)
+    println()
+    val noUnreads = client.activity.newUnreads(poster).orThrow()
+    require(noUnreads is FriendlyActivityClient.NewUnreadsResult.None)
+    println("=== New Unreads ===")
+    println(noUnreads)
     println()
     val delete = client.community.delete(
         authorization = replier,
