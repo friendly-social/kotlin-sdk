@@ -37,6 +37,14 @@ suspend fun activityReplyExample() {
     println("=== Authorization Replier ===")
     println(replier)
     println()
+    val noActivity = client.activity.list(
+        authorization = poster,
+        cursorId = null,
+    ).orThrow()
+    require(noActivity.data.isEmpty())
+    println("=== No Activity ===")
+    println(noActivity)
+    println()
     val addFriendFirst = client.friends.request(
         authorization = poster,
         userId = replier.id,
@@ -45,6 +53,19 @@ suspend fun activityReplyExample() {
     println("=== Add Friend First ===")
     println(addFriendFirst)
     println()
+    val nonMutualActivity = client.activity.list(
+        authorization = replier,
+        cursorId = null,
+    ).orThrow()
+    run {
+        require(nonMutualActivity.data.size == 1)
+        val first = nonMutualActivity.data.first()
+        require(first is ActivityDetails.NewRequest)
+        require(first.isMutual == false)
+    }
+    println("=== Non Mutual Activity ===")
+    println(nonMutualActivity)
+    println()
     val addFriendBack = client.friends.request(
         authorization = replier,
         userId = poster.id,
@@ -52,6 +73,19 @@ suspend fun activityReplyExample() {
     ).orThrow()
     println("=== Add Friend Back ===")
     println(addFriendBack)
+    println()
+    val mutualActivity = client.activity.list(
+        authorization = poster,
+        cursorId = null,
+    ).orThrow()
+    run {
+        require(mutualActivity.data.size == 1)
+        val first = mutualActivity.data.first()
+        require(first is ActivityDetails.NewRequest)
+        require(first.isMutual)
+    }
+    println("=== Mutual Activity ===")
+    println(mutualActivity)
     println()
     val post = client.community.post(
         authorization = poster,
@@ -68,14 +102,6 @@ suspend fun activityReplyExample() {
     println("=== Self Reply ===")
     println(selfReply)
     println()
-    val noActivity = client.activity.list(
-        authorization = poster,
-        cursorId = null,
-    ).orThrow()
-    require(noActivity.data.isEmpty())
-    println("=== No Activity ===")
-    println(noActivity)
-    println()
     val reply = client.community.post(
         authorization = replier,
         text = CommunityPostText.orThrow("reply!"),
@@ -89,8 +115,8 @@ suspend fun activityReplyExample() {
         cursorId = null,
     ).orThrow()
     val first = activity.data.first()
-    require(activity.data.size == 1)
-    require(first is ActivityDetails.Reply)
+    require(activity.data.size == 2)
+    require(first is ActivityDetails.NewReply)
     require(first.post.descriptor == reply)
     require(!first.isRead)
     println("=== Activity ===")
@@ -129,12 +155,32 @@ suspend fun activityReplyExample() {
     println("=== Delete ===")
     println(delete)
     println()
-    val emptyActivity = client.activity.list(
+    val deletedActivity = client.activity.list(
         authorization = poster,
         cursorId = null,
     ).orThrow()
-    require(emptyActivity.data.isEmpty())
-    println("=== Empty Activity ===")
-    println(emptyActivity)
+    require(deletedActivity.data.size == 1)
+    println("=== Deleted Activity ===")
+    println(deletedActivity)
+    println()
+    val indirectReply = client.community.post(
+        authorization = poster,
+        text = CommunityPostText.orThrow("indirect reply"),
+        replyTo = post,
+    ).orThrow()
+    println("=== Indirect Reply ===")
+    println(indirectReply)
+    println()
+    val indirectReplyActivity = client.activity.list(
+        authorization = replier,
+        cursorId = null,
+    ).orThrow()
+    run {
+        val first = indirectReplyActivity.data.first()
+        require(first is ActivityDetails.IndirectReplies)
+        require(first.post.descriptor == post)
+    }
+    println("=== Indirect Reply Activity ===")
+    println(indirectReplyActivity)
     println()
 }
