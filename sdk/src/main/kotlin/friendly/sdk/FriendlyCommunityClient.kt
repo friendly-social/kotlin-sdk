@@ -78,6 +78,9 @@ public class FriendlyCommunityClient(
         public data object Unauthorized : Details2Result {
             override fun orThrow(): Nothing = error("$this")
         }
+        public data object NotFound : Details2Result {
+            override fun orThrow(): Nothing = error("$this")
+        }
         public data class Success(
             val post: CommunityPostDetails,
             val replies: Cursor<CommunityPostReply>,
@@ -105,6 +108,7 @@ public class FriendlyCommunityClient(
         }
         val responseBody = when (response.status) {
             Unauthorized -> return Details2Result.Unauthorized
+            NotFound -> return Details2Result.NotFound
             OK -> response.body<Details2ResponseBody>()
             else -> error("Unknown status code")
         }
