@@ -182,6 +182,48 @@ public class FriendlyActivityClient(
             is Some -> AcknowledgeUnreadsResult.Some(activityId.typed())
         }
 
+    public sealed interface ReadAllResult {
+        public fun orThrow()
+
+        public data class IOError(val cause: Exception) : ReadAllResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : ReadAllResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Unauthorized : ReadAllResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object NotFound : ReadAllResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Success : ReadAllResult {
+            override fun orThrow() {}
+        }
+    }
+
+    public suspend fun readAll(
+        authorization: Authorization,
+        id: ActivityId,
+    ): ReadAllResult {
+        val endpoint = endpoint / "read" / "all"
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Post
+            authorization(authorization)
+        }
+        val response = when (request) {
+            is IOError -> return ReadAllResult.IOError(request.cause)
+            is ServerError -> return ReadAllResult.ServerError
+            is Success -> request.response
+        }
+        when (response.status) {
+            NotFound -> return ReadAllResult.NotFound
+            Unauthorized -> return ReadAllResult.Unauthorized
+            OK -> return ReadAllResult.Success
+            else -> error("Unknown status code")
+        }
+    }
+
     public sealed interface ReadResult {
         public fun orThrow()
 
