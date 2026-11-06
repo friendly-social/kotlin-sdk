@@ -5,7 +5,7 @@ public data class FriendToken private constructor(val string: String) {
         FriendTokenSerializable(string)
 
     public companion object {
-        public val Length: Int = 256
+        public val Length: Int = 16
 
         public fun orThrow(string: String): FriendToken {
             require(string.length == Length) {

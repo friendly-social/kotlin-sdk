@@ -5,6 +5,7 @@ import io.ktor.client.call.body
 import io.ktor.client.request.setBody
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 public class FriendlyFriendsClient(
     endpoint: FriendlyEndpoint,
@@ -13,7 +14,10 @@ public class FriendlyFriendsClient(
     private val endpoint: FriendlyEndpoint = endpoint / "friends"
 
     @Serializable
-    private data class GenerateResponseBody(val token: FriendTokenSerializable)
+    private data class GenerateResponseBody(
+        val token: FriendTokenSerializable,
+        val expiration: Instant,
+    )
 
     public sealed interface GenerateResult {
         public fun orThrow(): FriendToken
@@ -27,7 +31,10 @@ public class FriendlyFriendsClient(
         public data object Unauthorized : GenerateResult {
             override fun orThrow(): Nothing = error("$this")
         }
-        public data class Success(val token: FriendToken) : GenerateResult {
+        public data class Success(
+            val token: FriendToken,
+            val expiration: Instant,
+        ) : GenerateResult {
             override fun orThrow(): FriendToken = token
         }
     }
@@ -49,14 +56,12 @@ public class FriendlyFriendsClient(
             else -> error("Unknown status code")
         }
         val token = responseBody.token.typed()
-        return GenerateResult.Success(token)
+        val expiration = responseBody.expiration
+        return GenerateResult.Success(token, expiration)
     }
 
     @Serializable
-    private data class AddRequestBody(
-        val token: FriendTokenSerializable,
-        val userId: UserIdSerializable,
-    )
+    private data class AddRequestBody(val token: FriendTokenSerializable)
 
     @Serializable
     private sealed interface AddResponseBody {
@@ -92,13 +97,9 @@ public class FriendlyFriendsClient(
     public suspend fun add(
         authorization: Authorization,
         token: FriendToken,
-        userId: UserId,
     ): AddResult {
         val endpoint = endpoint / "add"
-        val requestBody = AddRequestBody(
-            token = token.serializable(),
-            userId = userId.serializable(),
-        )
+        val requestBody = AddRequestBody(token = token.serializable())
         val request = httpClient.safeHttpRequest(endpoint.string) {
             method = Post
             authorization(authorization)
