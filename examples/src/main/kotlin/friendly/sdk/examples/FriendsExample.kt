@@ -60,6 +60,12 @@ suspend fun friendsExample() {
     println("=== Friend 1 Token ===")
     println(friend1Token)
     println()
+    val friend1TokenDetails = client.friends.addDetails(
+        token = friend1Token,
+    ).orThrow()
+    println("=== Friend 1 Token Details ===")
+    println(friend1TokenDetails)
+    println()
     val add1ResultSuccess = client.friends
         .add(authorization2, friend1Token)
         .orThrow()

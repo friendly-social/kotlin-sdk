@@ -124,6 +124,59 @@ public class FriendlyFriendsClient(
     }
 
     @Serializable
+    private data class AddDetailsResponseBody(
+        val nickname: NicknameSerializable,
+        val description: UserDescriptionSerializable,
+        val interests: InterestListSerializable,
+        val avatar: FileDescriptorSerializable?,
+    )
+
+    public sealed interface AddDetailsResult {
+        public fun orThrow(): Success
+
+        public data class IOError(val cause: Exception) : AddDetailsResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : AddDetailsResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object NotFound : AddDetailsResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data class Success(
+            val nickname: Nickname,
+            val description: UserDescription,
+            val interests: InterestList,
+            val avatar: FileDescriptor?,
+        ) : AddDetailsResult {
+            override fun orThrow(): Success = this
+        }
+    }
+
+    public suspend fun addDetails(token: FriendToken): AddDetailsResult {
+        val endpoint = endpoint / "add" / "details" / token.string
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Get
+        }
+        val response = when (request) {
+            is IOError -> return AddDetailsResult.IOError(request.cause)
+            is ServerError -> return AddDetailsResult.ServerError
+            is Success -> request.response
+        }
+        val responseBody = when (response.status) {
+            OK -> response.body<AddDetailsResponseBody>()
+            NotFound -> return AddDetailsResult.NotFound
+            else -> error("Unknown status code")
+        }
+        return AddDetailsResult.Success(
+            nickname = responseBody.nickname.typed(),
+            description = responseBody.description.typed(),
+            interests = responseBody.interests.typed(),
+            avatar = responseBody.avatar?.typed(),
+        )
+    }
+
+    @Serializable
     private data class RequestRequestBody(
         val userId: UserIdSerializable,
         val userAccessHash: UserAccessHashSerializable,
@@ -148,64 +201,6 @@ public class FriendlyFriendsClient(
             override fun orThrow(): Nothing = error("$this")
         }
         public data object Success : RequestResult {
-            override fun orThrow() {}
-        }
-    }
-
-    public suspend fun decline(
-        authorization: Authorization,
-        userId: UserId,
-        userAccessHash: UserAccessHash,
-    ): DeclineResult {
-        val endpoint = endpoint / "decline"
-        val requestBody = DeclineRequestBody(
-            userId = userId.serializable(),
-            userAccessHash = userAccessHash.serializable(),
-        )
-        val request = httpClient.safeHttpRequest(endpoint.string) {
-            method = Post
-            authorization(authorization)
-            setBody(requestBody)
-        }
-        val response = when (request) {
-            is IOError -> return DeclineResult.IOError(request.cause)
-            is ServerError -> return DeclineResult.ServerError
-            is Success -> request.response
-        }
-        when (response.status) {
-            OK -> response.body<DeclineResponseBody>()
-            Unauthorized -> return DeclineResult.Unauthorized
-            NotFound -> return DeclineResult.NotFound
-            else -> error("Unknown status code")
-        }
-        return DeclineResult.Success
-    }
-
-    @Serializable
-    private data class DeclineRequestBody(
-        val userId: UserIdSerializable,
-        val userAccessHash: UserAccessHashSerializable,
-    )
-
-    @Serializable
-    internal data object DeclineResponseBody
-
-    public sealed interface DeclineResult {
-        public fun orThrow()
-
-        public data class IOError(val cause: Exception) : DeclineResult {
-            override fun orThrow(): Nothing = error("$this")
-        }
-        public data object ServerError : DeclineResult {
-            override fun orThrow(): Nothing = error("$this")
-        }
-        public data object Unauthorized : DeclineResult {
-            override fun orThrow(): Nothing = error("$this")
-        }
-        public data object NotFound : DeclineResult {
-            override fun orThrow(): Nothing = error("$this")
-        }
-        public data object Success : DeclineResult {
             override fun orThrow() {}
         }
     }
@@ -237,5 +232,63 @@ public class FriendlyFriendsClient(
             else -> error("Unknown status code")
         }
         return RequestResult.Success
+    }
+
+    @Serializable
+    private data class DeclineRequestBody(
+        val userId: UserIdSerializable,
+        val userAccessHash: UserAccessHashSerializable,
+    )
+
+    @Serializable
+    internal data object DeclineResponseBody
+
+    public sealed interface DeclineResult {
+        public fun orThrow()
+
+        public data class IOError(val cause: Exception) : DeclineResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object ServerError : DeclineResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Unauthorized : DeclineResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object NotFound : DeclineResult {
+            override fun orThrow(): Nothing = error("$this")
+        }
+        public data object Success : DeclineResult {
+            override fun orThrow() {}
+        }
+    }
+
+    public suspend fun decline(
+        authorization: Authorization,
+        userId: UserId,
+        userAccessHash: UserAccessHash,
+    ): DeclineResult {
+        val endpoint = endpoint / "decline"
+        val requestBody = DeclineRequestBody(
+            userId = userId.serializable(),
+            userAccessHash = userAccessHash.serializable(),
+        )
+        val request = httpClient.safeHttpRequest(endpoint.string) {
+            method = Post
+            authorization(authorization)
+            setBody(requestBody)
+        }
+        val response = when (request) {
+            is IOError -> return DeclineResult.IOError(request.cause)
+            is ServerError -> return DeclineResult.ServerError
+            is Success -> request.response
+        }
+        when (response.status) {
+            OK -> response.body<DeclineResponseBody>()
+            Unauthorized -> return DeclineResult.Unauthorized
+            NotFound -> return DeclineResult.NotFound
+            else -> error("Unknown status code")
+        }
+        return DeclineResult.Success
     }
 }
