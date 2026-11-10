@@ -129,6 +129,7 @@ public class FriendlyFriendsClient(
         val description: UserDescriptionSerializable,
         val interests: InterestListSerializable,
         val avatar: FileDescriptorSerializable?,
+        val expiration: Instant,
     )
 
     public sealed interface AddDetailsResult {
@@ -148,6 +149,7 @@ public class FriendlyFriendsClient(
             val description: UserDescription,
             val interests: InterestList,
             val avatar: FileDescriptor?,
+            val expiration: Instant,
         ) : AddDetailsResult {
             override fun orThrow(): Success = this
         }
@@ -173,6 +175,7 @@ public class FriendlyFriendsClient(
             description = responseBody.description.typed(),
             interests = responseBody.interests.typed(),
             avatar = responseBody.avatar?.typed(),
+            expiration = responseBody.expiration,
         )
     }
 
