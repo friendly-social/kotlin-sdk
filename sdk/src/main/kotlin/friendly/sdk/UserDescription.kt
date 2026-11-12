@@ -5,7 +5,7 @@ public data class UserDescription private constructor(val string: String) {
         UserDescriptionSerializable(string)
 
     public companion object {
-        public val MaxLength: Int = 1_024
+        public val MaxLength: Int = 10_240
 
         public fun validate(string: String): Boolean =
             string.isNotBlank() && string.length <= MaxLength
