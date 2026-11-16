@@ -9,6 +9,8 @@ public data class InterestList private constructor(val raw: List<Interest>) {
     public companion object {
         public val MaxSize: Int = 100
 
+        public val Empty: InterestList = orThrow(emptyList())
+
         public fun orThrow(vararg raw: Interest): InterestList =
             orThrow(raw.toList())
 

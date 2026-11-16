@@ -216,6 +216,7 @@ suspend fun communityExample() {
     println("=== After thread ===")
     println(afterThread.replies)
     println()
+    communityContinueThreadExample()
 }
 
 suspend fun communityFromExample(
@@ -279,4 +280,59 @@ suspend fun communityGetExample(poster: Authorization) {
     println("=== Get Upstream ===")
     println(getUpstream)
     println()
+}
+
+suspend fun communityContinueThreadExample() {
+    val poster = client.auth.generate(
+        nickname = Nickname.orThrow("poster"),
+        description = UserDescription.orThrow("omit"),
+        interests = InterestList.Empty,
+        avatar = null,
+        socialLink = null,
+    ).orThrow()
+    println("=== Generate poster ===")
+    println(poster)
+    println()
+    val replier = client.auth.generate(
+        nickname = Nickname.orThrow("replier"),
+        description = UserDescription.orThrow("omit"),
+        interests = InterestList.Empty,
+        avatar = null,
+        socialLink = null,
+    ).orThrow()
+    println("=== Generate replier ===")
+    println(replier)
+    println()
+    val firstPost = client.community.post(
+        authorization = poster,
+        text = CommunityPostText.orThrow("First post"),
+    ).orThrow()
+    println("=== First post ===")
+    println(firstPost)
+    println()
+    val unexpectedPost = client.community.post(
+        authorization = poster,
+        text = CommunityPostText.orThrow("Unexpected post"),
+        replyTo = firstPost,
+    ).orThrow()
+    println("=== Unexpected post ===")
+    println(unexpectedPost)
+    println()
+    val continueThread = client.community.post(
+        authorization = replier,
+        text = CommunityPostText.orThrow("Continue thread"),
+        replyTo = firstPost,
+        continueThread = true,
+    ).orThrow()
+    println("=== Continue thread ===")
+    println(continueThread)
+    println()
+    val continueThreadDetails = client.community.details2(
+        authorization = replier,
+        descriptor = continueThread,
+    ).orThrow()
+    println("=== Continue thread details ===")
+    println(continueThreadDetails)
+    println()
+    require(continueThreadDetails.upstream.last().descriptor == unexpectedPost)
 }

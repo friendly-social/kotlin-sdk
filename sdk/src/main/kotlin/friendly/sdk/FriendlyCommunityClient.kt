@@ -15,6 +15,7 @@ public class FriendlyCommunityClient(
     private data class PostRequestBody(
         val text: CommunityPostTextSerializable,
         val replyTo: CommunityPostDescriptorSerializable?,
+        val continueThread: Boolean,
     )
 
     public sealed interface PostResult {
@@ -42,10 +43,15 @@ public class FriendlyCommunityClient(
         authorization: Authorization,
         text: CommunityPostText,
         replyTo: CommunityPostDescriptor? = null,
+        continueThread: Boolean = false,
     ): PostResult {
+        if (continueThread) {
+            require(replyTo != null) { "Can't continue thread if not replying" }
+        }
         val requestBody = PostRequestBody(
             text = text.serializable(),
             replyTo = replyTo?.serializable(),
+            continueThread = continueThread,
         )
         val request = httpClient.safeHttpRequest(endpoint.string) {
             method = Post
