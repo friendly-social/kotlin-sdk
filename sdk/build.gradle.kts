@@ -16,7 +16,7 @@ group = "me.y9san9.friendly"
 version = libs.versions.friendly.get()
 
 kotlin {
-    jvmToolchain(8)
+    jvmToolchain(17)
 
     explicitApi()
 
